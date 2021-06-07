@@ -1,7 +1,7 @@
 #include <cilk/cilk.h>
 #include <ios>
 // #include "opencilk_reducer.hpp"
-#include <cilk/reducer_max.h>
+#include <cilk/reducer_opadd.h>
 #include <cilk/cilk_api.h>
 
 #include <iostream>
@@ -9,8 +9,8 @@
 #include <fstream>
 #include <vector>
 #include <random>
-#include <exception>
-#include <exception>
+#include <execution>
+#include <numeric>
 
 // #define n 160'000'000
 
@@ -20,49 +20,45 @@ unsigned int seed = std::random_device{}();
 std::mt19937 gen(seed);
 
 
-int measure_seq_max(std::vector<int> const& vec)
+int measure_seq_sum(std::vector<int> const& vec)
 {
 
-    // int max = vec[0];
-    // // Compute the max of integers 1..n
+    // int sum = 0;
+    // // Compute the sum of elements of `vec`
     // for(unsigned int i = 1; i <= vec.size(); ++i)
     // {
-    //     if(vec[i] > max)
-    //     {
-    //         max = vec[i];
-    //     }
+    //     sum += vec[i];
     // }
 
-    auto max = std::max_element(vec.begin(), vec.end());
+    auto sum = std::reduce(std::execution::par, vec.begin(), vec.end(), int(0));
 
-    return *max;
+    return sum;
 }
 
 
-int measure_cilk_max(std::vector<int> const& vec)
+int measure_cilk_sum(std::vector<int> const& vec)
 {
 
     // __cilkrts_set_param("nworkers","2");
 
-    cilk::reducer<cilk::op_max<int> > rm;
+    cilk::reducer< cilk::op_add<int> > sum;
     cilk_for (int i = 0; i < vec.size(); ++i)
     {
-        rm->calc_max(vec[i]);    // *rm = cilk::max_of(*max, vec[i])
+        *sum += vec[i];
     }
     
-    return rm.get_value();
+    return sum.get_value();
 
     // // TESTING. DON'T ENABLE IF BENCHMARKING RUNTIME
-    // if(measure_seq_max(vec) !=  rm.get_value())
+    // if(measure_seq_sum(vec) !=  rm.get_value())
     // {
     //     std::cout << "Error!" << rm.get_value() << "!=" << measure_seq_max(vec) << std::endl;
     //     throw std::exception();
     // }
 
-
 }
 
-double averageout_cilk_max(std::vector<int> const& vec)
+double averageout_cilk_sum(std::vector<int> const& vec)
 {
     
     int res;
@@ -71,18 +67,18 @@ double averageout_cilk_max(std::vector<int> const& vec)
     // average out 100 executions to avoid varying results
     for (auto i = 0; i < test_count; i++)
     {
-        res = measure_cilk_max(vec);
+        res = measure_cilk_sum(vec);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     
-    // std::cout << "Cilk max: " << res << std::endl;;
+    // std::cout << "Cilk SUM: " << res << std::endl;;
 
     std::chrono::duration<double, std::milli> elapsed_seconds = end-start;
     return elapsed_seconds.count() / test_count;
 }
 
-double averageout_seq_max(std::vector<int> const& vec)
+double averageout_seq_sum(std::vector<int> const& vec)
 {
     int res;
 
@@ -91,13 +87,13 @@ double averageout_seq_max(std::vector<int> const& vec)
     // average out 100 executions to avoid varying results
     for (auto i = 0; i < test_count; i++)
     {
-        res = measure_seq_max(vec);
+        res = measure_seq_sum(vec);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     
     // Use that for validity check
-    std::cout << "Real MAX: " << res << std::endl;
+    std::cout << "Real SUM: " << res << std::endl;
 
     std::chrono::duration<double, std::milli> elapsed_seconds = end-start;
     return elapsed_seconds.count() / test_count;
@@ -119,20 +115,20 @@ int  main(int argc, char* argv[])
 
 
     // std::ofstream f;
-    // f.open("max_times.csv", std::ios_base::app);
+    // f.open("sum_times.csv", std::ios_base::app);
 
     std::vector<int> vec(n);
     std::fill(
         std::begin(vec), std::end(vec), gen() % 1000);
 
-    auto time = averageout_cilk_max(vec);
-    // f << numWorkers << ", " << time << ',';
+    auto time = averageout_cilk_sum(vec);
     std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
+    // f << numWorkers << ", " << time << ',';
     
-    time = averageout_seq_max(vec);
+    time = averageout_seq_sum(vec);
+    std::cout << "[STD]: " << n << ", " << time << std::endl;
     // f << time << std::endl;
-    std::cout << "[STD]: " << n <<  ", " << time << std::endl;
-
+    
 
     // f.close();
 

@@ -20,3 +20,28 @@ do
     ./hpx/hpx_max $N --hpx:threads=$THREADS
     echo "---"
 done
+
+
+# Weak Scaling
+
+echo "~WEAK SCALING REPORT~"
+echo 
+# Give the initial number of elements for weak scaling
+# as the first argument. The elements will be doubled
+# in each iteration.
+if [ "$1" == "" ]
+then
+    N=$((10 ** 8))
+else
+    N="$1"
+fi
+
+for i in {0..4}
+do
+    THREADS=$((2 ** $i))
+    # RUN CILK
+    export CILK_NWORKERS=$THREADS && ./cilk/cilk_max $N
+    # RUN HPX
+    ./hpx/hpx_max $N --hpx:threads=$THREADS
+    echo "---"
+done
