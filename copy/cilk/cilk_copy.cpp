@@ -17,7 +17,7 @@
 
 int test_count = 100;
 
-void measure_seq_copy(std::vector<int> const& vec, std::vector<int> &res)
+void measure_std_copy(std::vector<int> const& vec, std::vector<int> &res)
 {
 
     // int sum = 0;
@@ -64,7 +64,7 @@ double averageout_cilk_copy(std::vector<int> const& vec, std::vector<int> &res)
     return elapsed_seconds.count() / test_count;
 }
 
-double averageout_seq_copy(std::vector<int> const& vec, std::vector<int> &res)
+double averageout_std_copy(std::vector<int> const& vec, std::vector<int> &res)
 {
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -72,7 +72,7 @@ double averageout_seq_copy(std::vector<int> const& vec, std::vector<int> &res)
     // average out 100 executions to avoid varying results
     for (auto i = 0; i < test_count; i++)
     {
-        measure_seq_copy(vec, res);
+        measure_std_copy(vec, res);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -109,12 +109,12 @@ int  main(int argc, char* argv[])
         vec[i] = std::rand() % 1000 + 1;
     }
 
-    // auto time = averageout_cilk_copy(vec, res);
-    // std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
-    // f << numWorkers << ", " << time << ',';
+    auto time = averageout_cilk_copy(vec, res);
+    std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
+    std::cout << numWorkers << ", " << time << ',' << std::endl;
 
     std::vector<int> res_seq(n);
-    auto time = averageout_seq_copy(vec, res_seq);
+    time = averageout_std_copy(vec, res_seq);
     std::cout << "[STD]: " << n << ", " << time << std::endl;
     // f << time << std::endl;
     

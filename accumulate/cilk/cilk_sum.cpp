@@ -93,7 +93,7 @@ double averageout_seq_sum(std::vector<int> const& vec)
     auto end = std::chrono::high_resolution_clock::now();
     
     // Use that for validity check
-    std::cout << "Real SUM: " << res << std::endl;
+    std::cout << "STD SUM: " << res << std::endl;
 
     std::chrono::duration<double, std::milli> elapsed_seconds = end-start;
     return elapsed_seconds.count() / test_count;

@@ -14,7 +14,7 @@ int test_count = 100;
 void measure_hpx_sum(std::vector<int> const& vec, std::vector<int> &res)
 {
 
-    hpx::copy(hpx::execution::par_unseq, vec.begin(), vec.end(), res.begin());
+    hpx::copy(hpx::execution::par, vec.begin(), vec.end(), res.begin());
 
 }
 

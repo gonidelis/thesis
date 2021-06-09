@@ -4,6 +4,8 @@
 #include <cilk/reducer_max.h>
 #include <cilk/cilk_api.h>
 
+// #include <benchmark/benchmark.h>
+
 #include <iostream>
 #include <chrono>
 #include <fstream>
@@ -19,8 +21,7 @@ int test_count = 100;
 unsigned int seed = std::random_device{}();
 std::mt19937 gen(seed);
 
-
-int measure_seq_max(std::vector<int> const& vec)
+int measure_std_max(std::vector<int> const& vec)
 {
 
     // int max = vec[0];
@@ -32,12 +33,12 @@ int measure_seq_max(std::vector<int> const& vec)
     //         max = vec[i];
     //     }
     // }
+    // return max;
 
     auto max = std::max_element(vec.begin(), vec.end());
-
     return *max;
-}
 
+}
 
 int measure_cilk_max(std::vector<int> const& vec)
 {
@@ -82,7 +83,7 @@ double averageout_cilk_max(std::vector<int> const& vec)
     return elapsed_seconds.count() / test_count;
 }
 
-double averageout_seq_max(std::vector<int> const& vec)
+double averageout_std_max(std::vector<int> const& vec)
 {
     int res;
 
@@ -91,13 +92,13 @@ double averageout_seq_max(std::vector<int> const& vec)
     // average out 100 executions to avoid varying results
     for (auto i = 0; i < test_count; i++)
     {
-        res = measure_seq_max(vec);
+        res = measure_std_max(vec);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     
     // Use that for validity check
-    std::cout << "Real MAX: " << res << std::endl;
+    std::cout << "STD MAX: " << res << std::endl;
 
     std::chrono::duration<double, std::milli> elapsed_seconds = end-start;
     return elapsed_seconds.count() / test_count;
@@ -126,10 +127,10 @@ int  main(int argc, char* argv[])
         std::begin(vec), std::end(vec), gen() % 1000);
 
     auto time = averageout_cilk_max(vec);
-    // f << numWorkers << ", " << time << ',';
+    // // f << numWorkers << ", " << time << ',';
     std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
     
-    time = averageout_seq_max(vec);
+    time = averageout_std_max(vec);
     // f << time << std::endl;
     std::cout << "[STD]: " << n <<  ", " << time << std::endl;
 
@@ -139,6 +140,4 @@ int  main(int argc, char* argv[])
     return 0;
 
 }   
-
-
 

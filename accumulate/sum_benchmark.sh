@@ -15,9 +15,9 @@ for i in {0..4}
 do
     THREADS=$((2 ** $i))
     # RUN CILK
-    export CILK_NWORKERS=$THREADS && ./cilk/cilk_max $N
+    export CILK_NWORKERS=$THREADS && ./cilk/cilk_sum $N
     # RUN HPX
-    ./hpx/hpx_max $N --hpx:threads=$THREADS
+    ./hpx/hpx_sum $N --hpx:threads=$THREADS
     echo "---"
 done
 
@@ -40,9 +40,9 @@ for i in {0..4}
 do
     THREADS=$((2 ** $i))
     # RUN CILK
-    export CILK_NWORKERS=$THREADS && ./cilk/cilk_max $N
+    export CILK_NWORKERS=$THREADS && ./cilk/cilk_sum $N
     # RUN HPX
-    ./hpx/hpx_max $N --hpx:threads=$THREADS
-    echo "---"
+    ./hpx/hpx_sum $N --hpx:threads=$THREADS
     N=$(($N*2))
+    echo "---"
 done
