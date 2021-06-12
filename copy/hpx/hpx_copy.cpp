@@ -11,14 +11,14 @@
 int test_count = 100;
 
 
-void measure_hpx_sum(std::vector<int> const& vec, std::vector<int> &res)
+void measure_hpx_copy(std::vector<int> const& vec, std::vector<int> &res)
 {
 
     hpx::copy(hpx::execution::par, vec.begin(), vec.end(), res.begin());
 
 }
 
-double averageout_hpx_sum(std::vector<int> const& vec, std::vector<int> &res)
+double averageout_hpx_copy(std::vector<int> const& vec, std::vector<int> &res)
 {
  
     auto start = std::chrono::high_resolution_clock::now();
@@ -26,7 +26,7 @@ double averageout_hpx_sum(std::vector<int> const& vec, std::vector<int> &res)
     // average out 100 executions to avoid varying results
     for (auto i = 0; i < test_count; ++i)
     {
-        measure_hpx_sum(vec, res);
+        measure_hpx_copy(vec, res);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
         vec[i] = std::rand() % 1000 + 1;
     }
 
-    auto time = averageout_hpx_sum(vec, res);
+    auto time = averageout_hpx_copy(vec, res);
 
     std::cout << "[HPX]: " << n << ", " << hpx::get_num_worker_threads() << ", " << time << std::endl;
 

@@ -1,7 +1,7 @@
 .PHONY: cilk_qsort clean
 
 CXX = clang++
-CXXFLAGS = -Wall -fopencilk -O3
+CXXFLAGS = -Wall -fopencilk -O3 -ltbb -std=c++1z
 
 
 cilk_qsort:
