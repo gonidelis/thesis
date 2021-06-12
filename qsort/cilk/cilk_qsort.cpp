@@ -51,15 +51,13 @@ void quickSort_par(std::vector<int> &arr, int low, int high)
         if(abs(high - low) > 10000)
         {
             cilk_spawn quickSort_par(arr, low, pi - 1);
-            // quickSort(arr, low, pi - 1);
             quickSort_par(arr, pi + 1, high);
             cilk_sync;
         }
         else
         {
-            quickSort_par(arr, low, pi - 1);
-            // quickSort(arr, low, pi - 1);
-            quickSort_par(arr, pi + 1, high);
+            quickSort(arr, low, pi - 1);
+            quickSort(arr, pi + 1, high);
         }
     }
 } 
@@ -74,10 +72,8 @@ void quickSort(std::vector<int> &arr, int low, int high)
         at right place */
         int pi = partition(arr, low, high);
  
-        // cilk_spawn quickSort(arr, low, pi - 1);
         quickSort(arr, low, pi - 1);
         quickSort(arr, pi + 1, high);
-        // cilk_sync;
     }
 }
 
@@ -176,10 +172,16 @@ int  main(int argc, char* argv[])
     
 
     // VALIDITY CHECK
-    // for( int i = 100; i < 200; ++i )
-    // {
-    //     std::cout << vec[i] << " " << res_seq[i] << std::endl; 
-    // }
+    bool correct = true;
+    for( int i = 0; i < vec.size()-1; ++i )  {
+      correct = correct && (vec[i] <= vec[i+1]); 
+    }
+  
+    if (correct) {
+      std::cout << "Test PASSED" << std::endl; 
+    } else {
+      std::cout << "*** Test FAILED! ***" << std::endl; 
+    }
 
 
     // f.close();
