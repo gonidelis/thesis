@@ -1,4 +1,6 @@
 #include <cilk/cilk.h>
+// #include <cilk/holder.h>
+#include <cilk/reducer_opadd.h>
 #include <cilk/cilk_api.h>
 
 #include <stdlib.h>
@@ -11,140 +13,75 @@
 #include <chrono>
 #include <execution>
 
-int test_count = 5;
+int test_count = 1;
 
 int compare (const void * a, const void * b)
 {
   return ( *(int*)a - *(int*)b );
 }
 
-// Alternate Function
-// void quickSort(std::vector<int> arr, int left, int right) {
-//       int i = left, j = right;
-//       int tmp;
-//       int pivot = arr[(left + right) / 2];
+int partition (std::vector<int> &arr, int low, int high)
+{
+    auto pivot = arr[high];
+
+    int i = (low - 1); // Index of smaller element and indicates the right position of pivot found so far
  
-//       /* partition */
-//       while (i <= j) {
-//             while (arr[i] < pivot)
-//                   i++;
-//             while (arr[j] > pivot)
-//                   j--;
-//             if (i <= j) {
-//                   tmp = arr[i];
-//                   arr[i] = arr[j];
-//                   arr[j] = tmp;
-//                   i++;
-//                   j--;
-//             }
-//       };
- 
-//       /* recursion  */
-
-// 	  if (left < j)
-//       {
-        
-//         // std::cout << __cilkrts_get_nworkers() << std::endl;
-//         cilk_spawn quickSort(arr, left, j);
-        
-//       }
-//       if (i < right)
-//             quickSort(arr, i, right);
-// 		cilk_sync;
-// 		//*/
-// }
-
-template<class T>
-void quick_sort(std::vector<T> list, std::true_type);
-template<class T>
-void quick_sort(std::vector<T> list);
-
-template<class T>
-void quick_sort(std::vector<T>& list, int start, int end, std::true_type);
-template<class T>
-void quick_sort(std::vector<T>& list, int start, int end);
-
-template<class T>
-int partition(std::vector<T>& list, int start, int end, int pivot);
-
-
-// SEQUENTIAL CALLER
-template<class T>
-void quick_sort(std::vector<T> list) {
-  quick_sort(list, 0, list.size() - 1);
-}
-
-// PARALLEL CALLER
-template<class T>
-void quick_sort(std::vector<T> list, std::true_type) {
-  quick_sort(list, 0, list.size() - 1, std::true_type{});
-}
-
-
-// SEQUENTIAL VERSION
-template<class T>
-void quick_sort(std::vector<T>& list, int start, int end) {
-
-    if(start < end)
+    for (int j = low; j <= high - 1; j++)
     {
-        int pivot = list[(start + end) / 2];
-        int index = partition(list, start, end, pivot);
-        quick_sort(list, start, index - 1);
-        // quick_sort(list, start, index - 1);
-        quick_sort(list, index, end);
-    }
-}
-
-// PARALLEL VERSION (std::true_type)
-template<class T>
-void quick_sort(std::vector<T>& list, int start, int end, std::true_type) {
-
-    if(start < end)
-    {
-        int pivot = list[(start + end) / 2];
-        int index = partition(list, start, end, pivot);
-        if (abs(end-start) > list.size()/16)                  // CONTROL GRANULARITY!!!
+        // If current element is smaller than the pivot
+        if (arr[j] < pivot)
         {
-            if(abs(start - index) > abs(end - index))          // SPAWN EXTRA WORKER FOR THE LARGER CHUNK
-            {
-                cilk_spawn quick_sort(list, start, index - 1);
-                quick_sort(list, index, end);
-                cilk_sync;
-            }
-            else
-            {
-                quick_sort(list, start, index - 1);
-                cilk_spawn quick_sort(list, index, end);
-                cilk_sync;
-            }
+            i++; // increment index of smaller element
+            std::swap(arr[i], arr[j]);
+        }
+    }
+    std::swap(arr[i + 1], arr[high]);
+    return (i + 1);
+}
+
+void quickSort_par(std::vector<int> &arr, int low, int high)
+{
+
+    if (low < high)
+    {
+        /* pi is partitioning index, arr[p] is now
+        at right place */
+        auto pi = partition(arr, low, high);
+
+        if(abs(high - low) > 10000)
+        {
+            cilk_spawn quickSort_par(arr, low, pi - 1);
+            // quickSort(arr, low, pi - 1);
+            quickSort_par(arr, pi + 1, high);
+            cilk_sync;
         }
         else
         {
-            quick_sort(list, start, index - 1);
-            // quick_sort(list, start, index - 1);
-            quick_sort(list, index, end);
-
+            quickSort_par(arr, low, pi - 1);
+            // quickSort(arr, low, pi - 1);
+            quickSort_par(arr, pi + 1, high);
         }
+    }
+} 
 
+void quickSort(std::vector<int> &arr, int low, int high)
+{
+    
+    if (low < high)
+    {
+
+        /* pi is partitioning index, arr[p] is now
+        at right place */
+        int pi = partition(arr, low, high);
+ 
+        // cilk_spawn quickSort(arr, low, pi - 1);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+        // cilk_sync;
     }
 }
 
-template<class T>
-int partition(std::vector<T>& list, int start, int end, int pivot) {
-  int left = start, right = end;
-  
-  while(left <= right) {
-    while (list[left] < pivot) left++;
-    while (list[right] > pivot) right--;
-    if (left <= right) {
-      std::swap(list[left], list[right]);
-      left++, right--;
-    }
-  }
-  return left;
-}
-
-void measure_cilk_qsort(std::vector<int> vec)
+void measure_cilk_qsort(std::vector<int> &vec)
 {
 
     // int sum = 0;
@@ -154,7 +91,7 @@ void measure_cilk_qsort(std::vector<int> vec)
     //     sum += vec[i];
     // }
 
-    quick_sort(vec, std::true_type{});
+    quickSort_par(vec, 0, vec.size() - 1);
     // quickSort(vec, 0, vec.size() - 1);
 
 }
@@ -162,10 +99,10 @@ void measure_cilk_qsort(std::vector<int> vec)
 void measure_std_qsort(std::vector<int> vec)
 {
     // std::qsort(&vec[0], vec.size(), sizeof(int), compare);
-    quick_sort(vec);
+    quickSort(vec, 0, vec.size() - 1);
 }
 
-double averageout_cilk_qsort(std::vector<int> vec)
+double averageout_cilk_qsort(std::vector<int> &vec)
 {
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -207,7 +144,7 @@ int  main(int argc, char* argv[])
     int n;
     if(argv[1] == NULL)
     {
-        n = 1000000;
+        n = 100000;
     }
     else
     {
@@ -229,6 +166,7 @@ int  main(int argc, char* argv[])
     }
 
     auto time = averageout_cilk_qsort(vec);
+
     std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
     std::cout << numWorkers << ", " << time << ',' << std::endl;
 
