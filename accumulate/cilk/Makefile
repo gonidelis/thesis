@@ -1,7 +1,7 @@
 .PHONY: cilk_sum clean
 
-CXX = clang++
-CXXFLAGS = -Wall -fopencilk -O3 -ltbb -std=c++1z
+CXX = ~/CILK/build/bin/clang++
+CXXFLAGS = -Wall -fopencilk -O3
 
 
 cilk_sum:

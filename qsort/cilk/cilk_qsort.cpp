@@ -8,20 +8,13 @@
 #include <iostream>
 #include <random>
 #include <vector>
-#include <ctime>
-#include <algorithm>
 #include <chrono>
-#include <execution>
 
 int GRANULARITY_THRESHOLD = 10000;
 int test_count = 1;
 
-int compare (const void * a, const void * b)
-{
-  return ( *(int*)a - *(int*)b );
-}
 
-int partition (std::vector<int> &arr, int low, int high)
+int partition(std::vector<int> &arr, int low, int high)
 {
     auto pivot = arr[high];
 
@@ -98,11 +91,6 @@ void measure_cilk_qsort(std::vector<int> &vec)
 
 }
 
-void measure_std_qsort(std::vector<int> &vec)
-{
-    std::sort(std::execution::par, vec.begin(), vec.end(), std::less<int>{});
-    // quickSort(vec, 0, vec.size() - 1);
-}
 
 double averageout_cilk_qsort(std::vector<int> &vec)
 {
@@ -113,23 +101,6 @@ double averageout_cilk_qsort(std::vector<int> &vec)
     for (auto i = 0; i < test_count; i++)
     {
         measure_cilk_qsort(vec);
-    }
-
-    auto end = std::chrono::high_resolution_clock::now();
-    
-    std::chrono::duration<double, std::milli> elapsed_seconds = end-start;
-    return elapsed_seconds.count() / test_count;
-}
-
-double averageout_std_qsort(std::vector<int> & vec)
-{
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // average out 100 executions to avoid varying results
-    for (auto i = 0; i < test_count; i++)
-    {
-        measure_std_qsort(vec);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -173,17 +144,12 @@ int  main(int argc, char* argv[])
     {
         seq_vec[i] = vec[i];
         // std::cout << vec[i] << std::endl;
-    }
+    }    
 
-    
+    auto time = averageout_cilk_qsort(vec);
+    std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
+    std::cout << numWorkers << ", " << time << ',' << std::endl;
 
-    // auto time = averageout_cilk_qsort(vec);
-
-    // std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
-    // std::cout << numWorkers << ", " << time << ',' << std::endl;
-
-    auto time = averageout_std_qsort(seq_vec);
-    std::cout << "[SEQ]: " << n << ", " << time << std::endl;
     // f << time << std::endl;
     
 

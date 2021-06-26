@@ -1,11 +1,11 @@
-.PHONY: cilk_qsort clean
+.PHONY: std_qsort clean
 
-CXX = ~/CILK/build/bin/clang++
-CXXFLAGS = -Wall -fopencilk -O3
+CXX = g++
+CXXFLAGS = -Wall -O3 -std=c++1z
 
 
-cilk_qsort:
-	$(CXX) -o cilk_qsort  cilk_qsort.cpp  $(CXXFLAGS) 
+std_qsort:
+	$(CXX) -o std_qsort  std_qsort.cpp  $(CXXFLAGS) 
 
 bench:
 	$(CXX) cilk_qsort.cpp -std=c++1z \

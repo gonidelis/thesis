@@ -1,13 +1,11 @@
-#include <cilk/cilk.h>
-// #include "opencilk_reducer.hpp"
-#include <cilk/reducer_opadd.h>
-#include <cilk/cilk_api.h>
-
 #include <iostream>
 #include <chrono>
 #include <fstream>
 #include <vector>
 #include <random>
+#include <execution>
+#include <numeric>
+#include <thread>
 
 // #define n 160'000'000
 
@@ -16,43 +14,38 @@ int test_count = 100;
 unsigned int seed = std::random_device{}();
 std::mt19937 gen(seed);
 
-int measure_cilk_sum(std::vector<int> const& vec)
+
+int measure_std_sum(std::vector<int> const& vec)
 {
 
-    // __cilkrts_set_param("nworkers","2");
-
-    cilk::reducer< cilk::op_add<int> > sum;
-    cilk_for (int i = 0; i < vec.size(); ++i)
-    {
-        *sum += vec[i];
-    }
-    
-    return sum.get_value();
-
-    // // TESTING. DON'T ENABLE IF BENCHMARKING RUNTIME
-    // if(measure_seq_sum(vec) !=  rm.get_value())
+    // int sum = 0;
+    // // Compute the sum of elements of `vec`
+    // for(unsigned int i = 1; i <= vec.size(); ++i)
     // {
-    //     std::cout << "Error!" << rm.get_value() << "!=" << measure_seq_max(vec) << std::endl;
-    //     throw std::exception();
+    //     sum += vec[i];
     // }
 
+    auto sum = std::reduce(std::execution::par, vec.begin(), vec.end(), int(0));
+
+    return sum;
 }
 
-double averageout_cilk_sum(std::vector<int> const& vec)
+double averageout_std_sum(std::vector<int> const& vec)
 {
-    
     int res;
+
     auto start = std::chrono::high_resolution_clock::now();
 
     // average out 100 executions to avoid varying results
     for (auto i = 0; i < test_count; i++)
     {
-        res = measure_cilk_sum(vec);
+        res = measure_std_sum(vec);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     
-    // std::cout << "Cilk SUM: " << res << std::endl;;
+    // Use that for validity check
+    std::cout << "STD SUM: " << res << std::endl;
 
     std::chrono::duration<double, std::milli> elapsed_seconds = end-start;
     return elapsed_seconds.count() / test_count;
@@ -70,7 +63,7 @@ int  main(int argc, char* argv[])
         n = std::atoi(argv[1]);
     }
 
-    int numWorkers = __cilkrts_get_nworkers();
+    unsigned int workers = std::thread::hardware_concurrency();
 
     // std::ofstream f;
     // f.open("sum_times.csv", std::ios_base::app);
@@ -79,13 +72,15 @@ int  main(int argc, char* argv[])
     std::fill(
         std::begin(vec), std::end(vec), gen() % 1000);
 
-    auto time = averageout_cilk_sum(vec);
-    std::cout << "[Cilk]: " << n << " ," << numWorkers << ", " << time << std::endl;
-    // f << numWorkers << ", " << time << ',';
+    auto time = averageout_std_sum(vec);
+    std::cout << "[STD]: " << n << ", " << workers << ", " << time << std::endl;
+    // f << time << std::endl;
     
+
     // f.close();
 
     return 0;
+
 }   
 
 

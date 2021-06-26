@@ -1,6 +1,6 @@
 #include <hpx/hpx_main.hpp>
-#include <hpx/algorithm.hpp>
-#include <hpx/execution.hpp>
+#include <hpx/modules/algorithms.hpp>
+// #include <hpx/execution.hpp>
 // #include <hpx/runtime.hpp>
 
 #include <vector>

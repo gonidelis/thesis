@@ -1,11 +1,10 @@
-.PHONY: cilk_max clean
+.PHONY: std_max clean
 
-CXX = ~/CILK/build/bin/clang++
-CXXFLAGS = -Wall -fopencilk -O3
+CXX = g++
+CXXFLAGS = -Wall -O3 -std=c++1z
 
-
-cilk_max:
-	$(CXX) -o cilk_max  cilk_max.cpp  $(CXXFLAGS) 
+std_max:
+	$(CXX) -o std_max  std_max.cpp  $(CXXFLAGS) 
 
 bench:
 	$(CXX) cilk_max.cpp -std=c++1z \

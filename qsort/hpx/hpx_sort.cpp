@@ -1,6 +1,6 @@
 #include <hpx/hpx_main.hpp>
 #include <hpx/modules/algorithms.hpp>
-// #include <hpx/modules/execution.hpp>
+// #include <hpx/execution.hpp>
 // #include <hpx/runtime.hpp>
 
 #include <vector>
@@ -8,37 +8,30 @@
 #include <chrono>
 
 
-int test_count = 100;
+int test_count = 1;
 
-unsigned int seed = std::random_device{}();
-std::mt19937 gen(seed);
 
-int measure_hpx_sum(std::vector<int> const& vec)
+void measure_hpx_sort(std::vector<int> & vec)
 {
 
-    auto sum = hpx::reduce(hpx::execution::par, vec.begin(), vec.end());
-
-    return sum;
-
+    std::less<int> comp;
+    hpx::parallel::v1::sort(hpx::execution::par, vec.begin(), vec.end(), comp);
 }
 
-double averageout_hpx_sum(std::vector<int> const& vec)
+double averageout_hpx_sort(std::vector<int> & vec)
 {
-    int res;
-
+ 
     auto start = std::chrono::high_resolution_clock::now();
 
     // average out 100 executions to avoid varying results
     for (auto i = 0; i < test_count; ++i)
     {
-        res = measure_hpx_sum(vec);
+        measure_hpx_sort(vec);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
 
-    // Use that for validity check
-    // std::cout << "HPX SUM: " << res << std::endl;
-
+ 
     std::chrono::duration<double, std::milli> elapsed_seconds = end-start;
     return elapsed_seconds.count() / test_count;
 }
@@ -46,6 +39,8 @@ double averageout_hpx_sum(std::vector<int> const& vec)
 
 int main(int argc, char* argv[])
 {
+    std::srand(std::time(nullptr)); // use current time as seed for random generator
+
     int n;
     if(argv[1] == NULL)
     {
@@ -57,12 +52,23 @@ int main(int argc, char* argv[])
     }
 
     std::vector<int> vec(n);
-    std::fill(
-        std::begin(vec), std::end(vec), gen() % 1000);
+    std::vector<int> res(n);
 
-    auto time = averageout_hpx_sum(vec);
+    // Fill vec with random numbers
+    for( int i = 0; i < vec.size(); ++i )
+    {
+        vec[i] = std::rand() % 1000 + 1;
+    }
+
+    auto time = averageout_hpx_sort(vec);
 
     std::cout << "[HPX]: " << n << ", " << hpx::get_num_worker_threads() << ", " << time << std::endl;
+
+    // VALIDITY CHECK
+    // for( int i = 100; i < 200; ++i )
+    // {
+    //     std::cout << vec[i] << " " << res[i] << std::endl; 
+    // }
 
     return 0;
 }
